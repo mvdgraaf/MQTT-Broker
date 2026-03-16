@@ -1,0 +1,8 @@
+services:
+  mqtt-broker:
+    build: .
+    image: mqtt:latest
+    container_name: mqtt-server
+    ports:
+      - "1883:1883"
+    restart: unless-stopped

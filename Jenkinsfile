@@ -3,24 +3,23 @@ pipeline {
 
     tools {
         maven 'Maven'
-        jdk 'JDK25'
+        jdk 'JDK17'
     }
 
     environment {
-        IMAGE_NAME = "mqtt"
+        GIT_REPO  = "https://github.com/mvdgraaf/MQTT-Broker.git"
+        BRANCH    = "master"
+
+        IMAGE_NAME = "ghcr.io/mvdgraaf/mqtt"
         IMAGE_TAG  = "${BUILD_NUMBER}"
-        GIT_REPO   = "https://github.com/mvdgraaf/MQTT-Broker.git"
-        GIT_BRANCH = "master"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                script {
-                    git branch: "${GIT_BRANCH}",
-                        url: "${GIT_REPO}"
-                }
+                git branch: "${BRANCH}",
+                    url: "${GIT_REPO}"
             }
         }
 
@@ -43,6 +42,7 @@ pipeline {
                 """
             }
         }
+
         stage('Login to GHCR') {
             steps {
                 withCredentials([usernamePassword(
@@ -50,26 +50,31 @@ pipeline {
                     usernameVariable: 'GITHUB_USER',
                     passwordVariable: 'GITHUB_TOKEN'
                 )]) {
-                    sh '''
+                    sh """
                         echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
-                    '''
+                    """
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh "docker push powergamer/${IMAGE_NAME}:${IMAGE_TAG}"
+                sh """
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
     }
 
     post {
         success {
-            echo 'Build succesvol afgerond 🎉'
+            echo "✅ Build succesvol!"
+            echo "🐳 Docker image gepusht naar GHCR:"
+            echo "${IMAGE_NAME}:${IMAGE_TAG}"
         }
+
         failure {
-            echo 'Build mislukt ❌'
+            echo "❌ Build mislukt"
         }
     }
 }

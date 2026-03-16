@@ -43,6 +43,25 @@ pipeline {
                 """
             }
         }
+        stage('Login to GHCR') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GITHUB_USER',
+                    passwordVariable: 'GITHUB_TOKEN'
+                )]) {
+                    sh '''
+                        echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
     }
 
     post {
